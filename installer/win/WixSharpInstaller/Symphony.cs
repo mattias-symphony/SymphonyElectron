@@ -240,12 +240,11 @@ class Script
         Compiler.BuildMsi(project);
     }
     
-
     static void project_Load(SetupEventArgs e)
     {
-        try
+        if (e.IsInstalling || e.IsUpgrading)
         {
-            if (e.IsInstalling || e.IsUpgrading)
+            try
             {
                 // "ALLUSERS" will be set to "2" if installing through UI, so the "MSIINSTALLPERUSER" property can be used so the user can choose install scope
                 if (e.Session["ALLUSERS"] != "2" )
@@ -277,19 +276,37 @@ class Script
                     }
                 });
             }
-        }
-        catch (System.ComponentModel.Win32Exception ex)
-        {
-            // We always seem to get this specific exception triggered, but the application still close down correctly.
-            // The exception description is "Only part of a ReadProcessMemory or WriteProcessMemory request was completed".
-            // We ignore that specific exception, so as not to put false error outputs into the log.
-            if (ex.NativeErrorCode != 299) {
+            catch (System.ComponentModel.Win32Exception ex)
+            {
+                // We always seem to get this specific exception triggered, but the application still close down correctly.
+                // The exception description is "Only part of a ReadProcessMemory or WriteProcessMemory request was completed".
+                // We ignore that specific exception, so as not to put false error outputs into the log.
+                if (ex.NativeErrorCode != 299) {
+                    e.Session.Log("Error trying to close all Symphony instances: " + ex.ToString() );
+                }
+            }
+            catch (System.Exception ex)
+            {
                 e.Session.Log("Error trying to close all Symphony instances: " + ex.ToString() );
             }
         }
-        catch (System.Exception ex)
+        else if (e.IsUninstalling)
         {
-            e.Session.Log("Error trying to close all Symphony instances: " + ex.ToString() );
+            try
+            {
+                var MB_TOPMOST = (System.Windows.Forms.MessageBoxOptions)0x40000; // Custom define of Win32 constant
+                var result = System.Windows.Forms.MessageBox.Show("Are you sure you want to uninstall Symphony?",
+                    "Windows Installer", System.Windows.Forms.MessageBoxButtons.YesNo, System.Windows.Forms.MessageBoxIcon.None,
+                    System.Windows.Forms.MessageBoxDefaultButton.Button1, MB_TOPMOST );  
+                if (result != System.Windows.Forms.DialogResult.Yes)
+                {
+                    e.Result = ActionResult.UserExit; // Signal to installer to exit
+                }
+            }
+            catch (System.Exception ex)
+            {
+                e.Session.Log("Error displaying uninstall confirmation dialog: " + ex.ToString() );
+            }
         }
     }
 }
