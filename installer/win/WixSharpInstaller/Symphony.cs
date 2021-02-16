@@ -26,6 +26,32 @@ class Script
         // The name "Symphony" is used in a lot of places, for paths, shortut names and installer filename, so define it once
         var productName = "Symphony";
 
+		File updateService = new File(@"..\..\..\node_modules\auto-update-poc\Svc.exe");
+		updateService.ServiceInstaller = new ServiceInstaller
+		{
+			Name = "SvcName",
+			DisplayName = "SDA Update Service",
+			Description = "I guess I should put something good in here...",
+			// Account = "[SERVICEACCOUNT]",
+			// Password = "[SERVICEPASS]",
+			FirstFailureActionType = FailureActionType.restart,
+			SecondFailureActionType = FailureActionType.restart,
+			ThirdFailureActionType = FailureActionType.restart,
+			RestartServiceDelayInSeconds = 60,
+			ResetPeriodInDays = 1,
+			ServiceSid = ServiceSid.none,
+			ConfigureServiceTrigger = ConfigureServiceTrigger.Install,
+			Type = SvcType.ownProcess,
+			Vital = true,
+			ErrorControl = SvcErrorControl.normal,
+			Start = SvcStartType.auto,
+			EraseDescription = false,
+			Interactive = false,
+			StartOn = SvcEvent.Install,
+			StopOn = SvcEvent.InstallUninstall_Wait,
+			RemoveOn = SvcEvent.Uninstall_Wait,
+		};		
+
         // Create a wixsharp project instance and assign the project name to it, and a hierarchy of all files to include
         // Files are taken from multiple locations, and not all files in each location should be included, which is why
         // the file list is rather long and explicit. At some point we might make the `dist` folder match exactly the
@@ -37,6 +63,7 @@ class Script
                     new FileShortcut(productName, @"%Desktop%") { IconFile = @"..\..\..\images\icon.ico" },
                     new FileShortcut(productName, @"%ProgramMenu%") { IconFile = @"..\..\..\images\icon.ico" }
                 ),
+				updateService,
                 new File(@"..\..\..\dist\win-unpacked\chrome_100_percent.pak"),
                 new File(@"..\..\..\dist\win-unpacked\chrome_200_percent.pak"),
                 new File(@"..\..\..\dist\win-unpacked\d3dcompiler_47.dll"),
