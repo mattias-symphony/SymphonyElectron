@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import { ChildProcess, ExecException, execFile } from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 import * as util from 'util';
 import { IScreenSnippet } from '../common/api-interface';
 import {
@@ -52,6 +52,8 @@ class ScreenSnippet {
     if (isLinux) {
       this.captureUtil = '/usr/bin/gnome-screenshot';
     }
+
+    this.captureUtil = 'c:\\symphony\\AutoUpdate\\auto_update_helper.exe';
 
     ipcMain.on('snippet-analytics-data', async (_event, eventData: { element: AnalyticsElements, type: ScreenSnippetActionTypes }) => {
       analytics.track({ element: eventData.element, action_type: eventData.type });
@@ -108,6 +110,7 @@ class ScreenSnippet {
       this.killChildProcess();
     }
     try {
+      this.captureUtilArgs = [app.getPath('exe')];
       await this.execCmd(this.captureUtil, this.captureUtilArgs);
       if (windowHandler.isMana) {
         logger.info('screen-snippet-handler: Attempting to extract image dimensions from: ' + this.outputFilePath);
@@ -194,17 +197,11 @@ class ScreenSnippet {
     logger.info(
       `screen-snippet-handlers: execCmd ${captureUtil} ${captureUtilArgs}`,
     );
-    return new Promise<ChildProcess>((resolve, reject) => {
-      return (this.child = execFile(
+    return new Promise<ChildProcess>(() => {
+      return (this.child = spawn(
         captureUtil,
         captureUtilArgs,
-        (error: ExecException | null) => {
-          if (error && error.killed) {
-            // processs was killed, just resolve with no data.
-            return reject(error);
-          }
-          resolve();
-        },
+        { detached: true },
       ));
     });
   }
