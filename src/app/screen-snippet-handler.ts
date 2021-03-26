@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
+import { app, BrowserWindow, clipboard, ipcMain, nativeImage } from 'electron';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -124,7 +124,8 @@ class ScreenSnippet {
       this.killChildProcess();
     }
     try {
-      await this.execCmd(this.captureUtil, this.captureUtilArgs);
+      await this.execCmd('C:\\Windows\\System32\\SnippingTool.exe', ['/clip']);
+      fs.writeFileSync(this.outputFilePath, clipboard.readImage().toPNG());
       if (windowHandler.isMana) {
         logger.info(
           'screen-snippet-handler: Attempting to extract image dimensions from: ' +
